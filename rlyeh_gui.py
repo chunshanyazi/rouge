@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import time
 import json
 import os
@@ -22,15 +23,27 @@ def load_config():
         'auto_rewards': True,
         'max_battles': 999,
         'battle_delay': 3,
-        'click_delay': 0.8
+        'click_delay': 0.8,
+        'roguelike_settings': {
+            'enabled': True,
+            'debuff_priority': 3,
+            'buff_priority': 2,
+            'equipment_priority': 4,
+            'stage_priority': 1,
+            'character_priority': 1,
+            'debuff_options': ['毒', '麻痺', '沉默', '混乱', '衰弱', '呪い', '暗闇'],
+            'buff_options': ['攻撃力UP', '防御力UP', '回復', '速度UP', 'クリティカル', '連続攻撃', '能力向上'],
+            'equipment_options': ['武器', '防具', 'アクセ', 'アイテム', '装備'],
+            'stage_options': ['1区', '2区', '3区', '4区', '5区', 'エリア', 'ステージ'],
+            'character_options': ['Tank', 'Healer', 'DPS', 'Support', '前衛', '後衛']
+        }
     }
     if os.path.exists(CONFIG_FILE):
         try:
             with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
                 config = json.load(f)
-                for key in default_config:
-                    if key not in config:
-                        config[key] = default_config[key]
+                if 'roguelike_settings' not in config:
+                    config['roguelike_settings'] = default_config['roguelike_settings']
                 return config
         except:
             pass
@@ -46,8 +59,8 @@ def save_config(config):
 class RlyehBotGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("RlyehBot - 邪神戦記ルルイエ少女隊")
-        self.root.geometry("600x500")
+        self.root.title("邪神戦記ルルイエ少女隊 - 挂机工具")
+        self.root.geometry("700x600")
         self.root.resizable(True, True)
         
         self.config = load_config()
@@ -58,7 +71,20 @@ class RlyehBotGUI:
         self.create_widgets()
     
     def create_widgets(self):
-        main_frame = ttk.Frame(self.root, padding="10")
+        self.notebook = ttk.Notebook(self.root)
+        self.notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        self.main_tab = ttk.Frame(self.notebook)
+        self.roguelike_tab = ttk.Frame(self.notebook)
+        
+        self.notebook.add(self.main_tab, text=" 主功能 ")
+        self.notebook.add(self.roguelike_tab, text=" 肉鸽设置 ")
+        
+        self.create_main_tab()
+        self.create_roguelike_tab()
+    
+    def create_main_tab(self):
+        main_frame = ttk.Frame(self.main_tab, padding="10")
         main_frame.pack(fill=tk.BOTH, expand=True)
         
         title = ttk.Label(main_frame, text="邪神戦記ルルイエ少女隊", font=("Microsoft YaHei", 16, "bold"))
@@ -89,9 +115,12 @@ class RlyehBotGUI:
         self.auto_rewards_var = tk.BooleanVar(value=self.config['auto_rewards'])
         ttk.Checkbutton(func_frame, text="自动领奖励", variable=self.auto_rewards_var).grid(row=1, column=0, sticky=tk.W, padx=5, pady=3)
         
-        ttk.Label(func_frame, text="最大战斗次数:").grid(row=1, column=1, sticky=tk.E, padx=5, pady=3)
+        self.roguelike_enabled_var = tk.BooleanVar(value=self.config.get('roguelike_settings', {}).get('enabled', True))
+        ttk.Checkbutton(func_frame, text="肉鸽自动选择", variable=self.roguelike_enabled_var).grid(row=1, column=1, sticky=tk.W, padx=5, pady=3)
+        
+        ttk.Label(func_frame, text="最大战斗次数:").grid(row=2, column=0, sticky=tk.E, padx=5, pady=3)
         self.max_battles_var = tk.StringVar(value=str(self.config['max_battles']))
-        ttk.Entry(func_frame, textvariable=self.max_battles_var, width=8).grid(row=1, column=2, sticky=tk.W, padx=5, pady=3)
+        ttk.Entry(func_frame, textvariable=self.max_battles_var, width=8).grid(row=2, column=1, sticky=tk.W, padx=5, pady=3)
         
         ctrl_frame = ttk.Frame(main_frame)
         ctrl_frame.pack(fill=tk.X, pady=10)
@@ -110,6 +139,123 @@ class RlyehBotGUI:
         
         self.log_text = scrolledtext.ScrolledText(log_frame, height=15, state=tk.DISABLED, font=("Consolas", 9))
         self.log_text.pack(fill=tk.BOTH, expand=True)
+    
+    def create_roguelike_tab(self):
+        rog_frame = ttk.Frame(self.roguelike_tab, padding="10")
+        rog_frame.pack(fill=tk.BOTH, expand=True)
+        
+        ttk.Label(rog_frame, text="肉鸽选项优先级设置（数字越大优先级越高）", font=("Microsoft YaHei", 12, "bold")).pack(pady=(0, 10))
+        
+        priority_frame = ttk.LabelFrame(rog_frame, text=" 优先级设置 ", padding="10")
+        priority_frame.pack(fill=tk.X, pady=5)
+        
+        ttk.Label(priority_frame, text="关卡选择优先级:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        self.stage_priority_var = tk.IntVar(value=self.config.get('roguelike_settings', {}).get('stage_priority', 1))
+        ttk.Spinbox(priority_frame, from_=1, to=10, textvariable=self.stage_priority_var, width=5).grid(row=0, column=1, sticky=tk.W, padx=5, pady=5)
+        
+        ttk.Label(priority_frame, text="角色选择优先级:").grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
+        self.char_priority_var = tk.IntVar(value=self.config.get('roguelike_settings', {}).get('character_priority', 1))
+        ttk.Spinbox(priority_frame, from_=1, to=10, textvariable=self.char_priority_var, width=5).grid(row=0, column=3, sticky=tk.W, padx=5, pady=5)
+        
+        ttk.Label(priority_frame, text="Buff选择优先级:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
+        self.buff_priority_var = tk.IntVar(value=self.config.get('roguelike_settings', {}).get('buff_priority', 2))
+        ttk.Spinbox(priority_frame, from_=1, to=10, textvariable=self.buff_priority_var, width=5).grid(row=1, column=1, sticky=tk.W, padx=5, pady=5)
+        
+        ttk.Label(priority_frame, text="Debuff选择优先级:").grid(row=1, column=2, sticky=tk.W, padx=5, pady=5)
+        self.debuff_priority_var = tk.IntVar(value=self.config.get('roguelike_settings', {}).get('debuff_priority', 3))
+        ttk.Spinbox(priority_frame, from_=1, to=10, textvariable=self.debuff_priority_var, width=5).grid(row=1, column=3, sticky=tk.W, padx=5, pady=5)
+        
+        ttk.Label(priority_frame, text="装备选择优先级:").grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
+        self.equip_priority_var = tk.IntVar(value=self.config.get('roguelike_settings', {}).get('equipment_priority', 4))
+        ttk.Spinbox(priority_frame, from_=1, to=10, textvariable=self.equip_priority_var, width=5).grid(row=2, column=1, sticky=tk.W, padx=5, pady=5)
+        
+        options_frame = ttk.LabelFrame(rog_frame, text=" 选项文本设置（请根据游戏内实际文本填写） ", padding="10")
+        options_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+        
+        ttk.Label(options_frame, text="Debuff选项（逗号分隔）:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=3)
+        debuff_default = ','.join(self.config.get('roguelike_settings', {}).get('debuff_options', ['毒', '麻痺', '沉默']))
+        self.debuff_entry = ttk.Entry(options_frame, width=50)
+        self.debuff_entry.insert(0, debuff_default)
+        self.debuff_entry.grid(row=0, column=1, padx=5, pady=3)
+        
+        ttk.Label(options_frame, text="Buff选项（逗号分隔）:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=3)
+        buff_default = ','.join(self.config.get('roguelike_settings', {}).get('buff_options', ['攻撃力UP', '防御力UP', '回復']))
+        self.buff_entry = ttk.Entry(options_frame, width=50)
+        self.buff_entry.insert(0, buff_default)
+        self.buff_entry.grid(row=1, column=1, padx=5, pady=3)
+        
+        ttk.Label(options_frame, text="装备选项（逗号分隔）:").grid(row=2, column=0, sticky=tk.W, padx=5, pady=3)
+        equip_default = ','.join(self.config.get('roguelike_settings', {}).get('equipment_options', ['武器', '防具', 'アクセ']))
+        self.equip_entry = ttk.Entry(options_frame, width=50)
+        self.equip_entry.insert(0, equip_default)
+        self.equip_entry.grid(row=2, column=1, padx=5, pady=3)
+        
+        ttk.Label(options_frame, text="关卡选项（逗号分隔）:").grid(row=3, column=0, sticky=tk.W, padx=5, pady=3)
+        stage_default = ','.join(self.config.get('roguelike_settings', {}).get('stage_options', ['1区', '2区', '3区']))
+        self.stage_entry = ttk.Entry(options_frame, width=50)
+        self.stage_entry.insert(0, stage_default)
+        self.stage_entry.grid(row=3, column=1, padx=5, pady=3)
+        
+        ttk.Label(options_frame, text="角色选项（逗号分隔）:").grid(row=4, column=0, sticky=tk.W, padx=5, pady=3)
+        char_default = ','.join(self.config.get('roguelike_settings', {}).get('character_options', ['Tank', 'Healer', 'DPS']))
+        self.char_entry = ttk.Entry(options_frame, width=50)
+        self.char_entry.insert(0, char_default)
+        self.char_entry.grid(row=4, column=1, padx=5, pady=3)
+        
+        ttk.Label(options_frame, text="战斗选项（逗号分隔）:").grid(row=5, column=0, sticky=tk.W, padx=5, pady=3)
+        battle_default = ','.join(self.config.get('roguelike_settings', {}).get('battle_options', ['戦闘', '战斗', '進む']))
+        self.battle_entry = ttk.Entry(options_frame, width=50)
+        self.battle_entry.insert(0, battle_default)
+        self.battle_entry.grid(row=5, column=1, padx=5, pady=3)
+        
+        save_frame = ttk.Frame(rog_frame)
+        save_frame.pack(fill=tk.X, pady=10)
+        
+        self.save_btn = ttk.Button(save_frame, text="保存设置", command=self.save_roguelike_settings)
+        self.save_btn.pack(side=tk.LEFT, padx=5)
+        
+        self.reset_btn = ttk.Button(save_frame, text="重置默认", command=self.reset_roguelike_settings)
+        self.reset_btn.pack(side=tk.LEFT, padx=5)
+    
+    def save_roguelike_settings(self):
+        rog = self.config.get('roguelike_settings', {})
+        
+        rog['stage_priority'] = self.stage_priority_var.get()
+        rog['character_priority'] = self.char_priority_var.get()
+        rog['buff_priority'] = self.buff_priority_var.get()
+        rog['debuff_priority'] = self.debuff_priority_var.get()
+        rog['equipment_priority'] = self.equip_priority_var.get()
+        
+        rog['debuff_options'] = [x.strip() for x in self.debuff_entry.get().split(',') if x.strip()]
+        rog['buff_options'] = [x.strip() for x in self.buff_entry.get().split(',') if x.strip()]
+        rog['equipment_options'] = [x.strip() for x in self.equip_entry.get().split(',') if x.strip()]
+        rog['stage_options'] = [x.strip() for x in self.stage_entry.get().split(',') if x.strip()]
+        rog['character_options'] = [x.strip() for x in self.char_entry.get().split(',') if x.strip()]
+        rog['battle_options'] = [x.strip() for x in self.battle_entry.get().split(',') if x.strip()]
+        
+        self.config['roguelike_settings'] = rog
+        save_config(self.config)
+        messagebox.showinfo("提示", "设置已保存！")
+    
+    def reset_roguelike_settings(self):
+        self.stage_priority_var.set(1)
+        self.char_priority_var.set(1)
+        self.buff_priority_var.set(2)
+        self.debuff_priority_var.set(3)
+        self.equip_priority_var.set(4)
+        self.debuff_entry.delete(0, tk.END)
+        self.debuff_entry.insert(0, "毒,麻痺,沉默,混乱,衰弱,呪い,暗闇")
+        self.buff_entry.delete(0, tk.END)
+        self.buff_entry.insert(0, "攻撃力UP,防御力UP,回復,速度UP,クリティカル,連続攻撃,能力向上")
+        self.equip_entry.delete(0, tk.END)
+        self.equip_entry.insert(0, "武器,防具,アクセ,アイテム,装備")
+        self.stage_entry.delete(0, tk.END)
+        self.stage_entry.insert(0, "1区,2区,3区,4区,5区,エリア,ステージ")
+        self.char_entry.delete(0, tk.END)
+        self.char_entry.insert(0, "Tank,Healer,DPS,Support,前衛,後衛")
+        self.battle_entry.delete(0, tk.END)
+        self.battle_entry.insert(0, "戦闘,战斗,進む,次へ")
+        messagebox.showinfo("提示", "已重置为默认设置")
     
     def log(self, message):
         self.log_text.config(state=tk.NORMAL)
@@ -168,6 +314,49 @@ class RlyehBotGUI:
         except:
             return False
     
+    def get_all_visible_texts(self):
+        try:
+            elements = self.driver.find_elements(By.XPATH, "//*[contains(text(),'')]")
+            texts = []
+            for el in elements:
+                if el.is_displayed() and el.text.strip():
+                    texts.append(el.text.strip())
+            return texts
+        except:
+            return []
+    
+    def select_by_priority(self, options_list):
+        rog = self.config.get('roguelike_settings', {})
+        
+        priority_map = {
+            'stage': rog.get('stage_priority', 1),
+            'character': rog.get('character_priority', 1),
+            'buff': rog.get('buff_priority', 2),
+            'debuff': rog.get('debuff_priority', 3),
+            'equipment': rog.get('equipment_priority', 4)
+        }
+        
+        if options_list[0] in rog.get('stage_options', []):
+            category = 'stage'
+        elif options_list[0] in rog.get('character_options', []):
+            category = 'character'
+        elif options_list[0] in rog.get('buff_options', []):
+            category = 'buff'
+        elif options_list[0] in rog.get('debuff_options', []):
+            category = 'debuff'
+        elif options_list[0] in rog.get('equipment_options', []):
+            category = 'equipment'
+        else:
+            return random.choice(options_list) if options_list else None
+        
+        priority = priority_map.get(category, 1)
+        
+        high_priority = [opt for opt in options_list if any(p in opt for p in ['攻撃力UP', '防御力UP', '回復', '武器', '防具'])]
+        if high_priority:
+            return high_priority[0]
+        
+        return options_list[0] if options_list else None
+    
     def collect_rewards(self):
         if not self.auto_rewards_var.get():
             return
@@ -179,6 +368,40 @@ class RlyehBotGUI:
                 time.sleep(1)
                 self.click_by_text("閉じる", timeout=2)
                 time.sleep(0.5)
+    
+    def select_roguelike_option(self):
+        rog = self.config.get('roguelike_settings', {})
+        if not rog.get('enabled', True):
+            return False
+        
+        all_texts = self.get_all_visible_texts()
+        if not all_texts:
+            return False
+        
+        rog_options = (
+            rog.get('stage_options', []) +
+            rog.get('character_options', []) +
+            rog.get('buff_options', []) +
+            rog.get('debuff_options', []) +
+            rog.get('equipment_options', []) +
+            rog.get('battle_options', [])
+        )
+        
+        for text in all_texts:
+            if text in rog_options:
+                if self.click_by_text(text, timeout=1):
+                    self.log(f"选择: {text}")
+                    time.sleep(1)
+                    
+                    self.click_by_text("決定", timeout=2)
+                    time.sleep(0.5)
+                    self.click_by_text("はい", timeout=2)
+                    time.sleep(0.5)
+                    self.click_by_text("OK", timeout=2)
+                    time.sleep(0.5)
+                    return True
+        
+        return False
     
     def select_event(self):
         if not self.auto_event_var.get():
@@ -211,13 +434,8 @@ class RlyehBotGUI:
         if not self.auto_battle_var.get():
             return False
         
-        battle_buttons = [
-            "戦闘開始",
-            "スタート",
-            "開始",
-            "挑戦",
-            "次へ"
-        ]
+        rog = self.config.get('roguelike_settings', {})
+        battle_buttons = rog.get('battle_options', ["戦闘開始", "スタート", "開始", "挑戦", "次へ"])
         
         for btn in battle_buttons:
             if self.click_by_text(btn, timeout=1):
@@ -275,12 +493,18 @@ class RlyehBotGUI:
         self.config['auto_event'] = self.auto_event_var.get()
         self.config['auto_rewards'] = self.auto_rewards_var.get()
         self.config['max_battles'] = max_battles
+        rog = self.config.get('roguelike_settings', {})
+        rog['enabled'] = self.roguelike_enabled_var.get()
         save_config(self.config)
         
         try:
             while self.running and battles < max_battles:
                 self.collect_rewards()
                 time.sleep(1)
+                
+                if rog.get('enabled', True):
+                    self.select_roguelike_option()
+                    time.sleep(1)
                 
                 self.select_event()
                 time.sleep(1)

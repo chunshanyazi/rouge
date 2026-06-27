@@ -1,19 +1,26 @@
 {
   "game_url": "https://play.games.dmm.co.jp/game/rlyehshoujotai_x_783592",
-  "dmm_id": "",
-  "dmm_password": "",
+  "chrome_path": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "chrome_debug_port": 9222,
   "proxy_port": 7890,
   "auto_login": true,
   "auto_battle": true,
   "auto_event": true,
-  "auto_daily": true,
   "auto_rewards": true,
-  "target_stage": "story",
-  "max_battles": 100,
-  "battle_delay": 2,
-  "click_delay": 0.5,
-  "debug_mode": false,
-  "headless": false,
-  "remote_debug_port": 9222,
-  "chrome_path": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+  "max_battles": 999,
+  "battle_delay": 3,
+  "click_delay": 0.8,
+  "roguelike_settings": {
+    "enabled": true,
+    "debuff_priority": 3,
+    "buff_priority": 2,
+    "equipment_priority": 4,
+    "stage_priority": 1,
+    "character_priority": 1,
+    "debuff_options": ["毒", "麻痺", "沉默", "混乱", "衰弱", "呪い"],
+    "buff_options": ["攻撃力UP", "防御力UP", "回復", "速度UP", "クリティカル", "連続攻撃"],
+    "equipment_options": ["武器", "防具", "アクセ", "アイテム"],
+    "stage_options": ["1区", "2区", "3区", "4区", "5区"],
+    "character_options": ["Tank", "Healer", "DPS", "Support"]
+  }
 }
