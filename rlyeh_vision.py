@@ -43,6 +43,8 @@ CATEGORIES = [
     ('defeat', '失败结算'),
     ('restart', '重新开始'),
     ('next_stage', '下一关/继续'),
+    ('error_500', '500网络错误'),
+    ('error_retry', '错误重试/重新进入'),
     ('common', '通用按钮'),
 ]
 
@@ -65,6 +67,7 @@ ROGUELIKE_PHASES = [
     ('defeat_screen', '失败画面'),
     ('final_clear', '最终通关'),
     ('restarting', '重新开始中'),
+    ('error_recovery', '网络错误恢复中'),
 ]
 
 DEFAULT_PHASE_PRIORITY = {
@@ -384,6 +387,61 @@ class ImageBot:
         except:
             return None
     
+    def check_network_error(self):
+        if self.is_image_present('error_500'):
+            return True
+        return False
+    
+    def handle_network_error(self):
+        self.log("检测到网络错误(500)，尝试重新进入游戏...")
+        self.set_phase('error_recovery')
+        
+        retry_folders = ['error_retry', 'confirm', 'common', 'close']
+        for folder in retry_folders:
+            result = self.find_best_in_folder(folder)
+            if result:
+                self.log(f"点击重试按钮: {result['filename']} ({folder})")
+                self.click_at(result['x'], result['y'])
+                self._sleep_check(3)
+                
+                wait_count = 0
+                while wait_count < 30:
+                    if not self.check_network_error():
+                        break
+                    result2 = self.find_best_in_folder(folder)
+                    if result2:
+                        self.click_at(result2['x'], result2['y'])
+                    self._sleep_check(2)
+                    wait_count += 1
+                
+                self.log("等待游戏重新加载...")
+                self._sleep_check(5)
+                
+                load_count = 0
+                while load_count < 60 and self.running:
+                    if self.is_image_present('menu') or self.is_image_present('start_apoc'):
+                        self.log("游戏已恢复，重新进入肉鸽模式...")
+                        self._sleep_check(2)
+                        self.find_and_click('start_apoc')
+                        self._sleep_check(3)
+                        self.find_and_click('confirm')
+                        self._sleep_check(3)
+                        return True
+                    
+                    self.find_and_click('confirm')
+                    self.find_and_click('common')
+                    self._sleep_check(2)
+                    load_count += 1
+                
+                self.log("游戏恢复完成，继续肉鸽流程")
+                return True
+        
+        self.log("未找到重试按钮，尝试点击通用确认...")
+        self.find_and_click('confirm')
+        self.find_and_click('common')
+        self._sleep_check(3)
+        return False
+    
     def detect_phase(self):
         phase_checks = [
             ('defeat_screen', ['defeat']),
@@ -450,6 +508,13 @@ class ImageBot:
         
         try:
             while self.running and self.run_count < max_runs:
+                if self.check_network_error():
+                    self.handle_network_error()
+                    if not self.running:
+                        break
+                    self._sleep_check(2)
+                    continue
+                
                 detected = self.detect_phase()
                 
                 if detected and detected != self.current_phase:
