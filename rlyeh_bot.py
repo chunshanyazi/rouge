@@ -35,7 +35,9 @@ class RlyehShoujotaiBot:
             'max_battles': 100,
             'battle_delay': 2,
             'click_delay': 0.5,
-            'debug_mode': False
+            'debug_mode': False,
+            'headless': False,
+            'remote_debug_port': 9222
         }
     
     def save_config(self, path='config.json'):
@@ -47,16 +49,46 @@ class RlyehShoujotaiBot:
         chrome_options.add_argument('--disable-gpu')
         chrome_options.add_argument('--disable-dev-shm-usage')
         chrome_options.add_argument('--no-sandbox')
-        chrome_options.add_argument('--start-maximized')
         chrome_options.add_argument('--window-size=1920,1080')
+        chrome_options.add_argument('--disable-extensions')
+        chrome_options.add_argument('--disable-plugins')
+        chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        chrome_options.add_experimental_option('useAutomationExtension', False)
         
         if self.config.get('proxy_port'):
             proxy = f'127.0.0.1:{self.config["proxy_port"]}'
             chrome_options.add_argument(f'--proxy-server=http://{proxy}')
         
-        self.driver = webdriver.Chrome(options=chrome_options)
-        self.wait = WebDriverWait(self.driver, 10)
-        self.driver.set_page_load_timeout(30)
+        debug_port = self.config.get('remote_debug_port', 9222)
+        chrome_options.add_argument(f'--remote-debugging-port={debug_port}')
+        chrome_options.add_argument(f'--remote-debugging-address=0.0.0.0')
+        
+        if self.config.get('headless'):
+            chrome_options.add_argument('--headless=new')
+        
+        try:
+            print("正在启动Chrome浏览器...")
+            self.driver = webdriver.Chrome(options=chrome_options)
+            self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+            self.wait = WebDriverWait(self.driver, 10)
+            self.driver.set_page_load_timeout(30)
+            print("Chrome浏览器启动成功！")
+        except Exception as e:
+            print(f"\n浏览器启动失败: {e}")
+            print("\n可能的原因：")
+            print("1. 服务器环境没有图形界面（DISPLAY未设置）")
+            print("2. Chrome浏览器未安装或版本不兼容")
+            print("3. 需要使用headless模式")
+            print("\n建议方案：")
+            print("1. 在本地电脑上运行脚本（推荐）")
+            print("2. 设置DISPLAY环境变量并配置X11转发")
+            print("3. 在config.json中设置headless: true")
+            raise
+        
+        print(f"\n远程调试地址: http://localhost:{debug_port}")
+        print(f"请在你的本地浏览器中打开上面的地址，即可看到脚本控制的Chrome窗口")
+        print(f"打开后可以手动登录DMM账号\n")
     
     def safe_click(self, element, delay=0.5):
         try:
