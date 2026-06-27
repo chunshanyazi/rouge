@@ -1,0 +1,16 @@
+{
+  "game_url": "https://play.games.dmm.co.jp/game/rlyehshoujotai_x_783592",
+  "dmm_id": "",
+  "dmm_password": "",
+  "proxy_port": 7890,
+  "auto_login": true,
+  "auto_battle": true,
+  "auto_event": true,
+  "auto_daily": true,
+  "auto_rewards": true,
+  "target_stage": "story",
+  "max_battles": 100,
+  "battle_delay": 2,
+  "click_delay": 0.5,
+  "debug_mode": false
+}
