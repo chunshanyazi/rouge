@@ -4,6 +4,7 @@
   "chrome_debug_port": 9222,
   "proxy_port": 7890,
   "auto_login": true,
+  "confidence": 0.8,
   "auto_battle": true,
   "auto_event": true,
   "auto_rewards": true,
@@ -12,16 +13,20 @@
   "click_delay": 0.8,
   "roguelike_settings": {
     "enabled": true,
-    "debuff_priority": 3,
+    "auto_restart": true,
+    "max_runs": 99,
+    "prefer_elite": true,
+    "prefer_boss": true,
+    "stage_priority": {
+      "stage_boss": 10,
+      "stage_elite": 8,
+      "stage_event": 6,
+      "stage_shop": 5,
+      "stage_normal": 3
+    },
     "buff_priority": 2,
+    "debuff_priority": 3,
     "equipment_priority": 4,
-    "stage_priority": 1,
-    "character_priority": 1,
-    "debuff_options": ["毒", "麻痺", "沉默", "混乱", "衰弱", "呪い", "暗闇", "拘束", "恐怖", "スタン"],
-    "buff_options": ["攻撃力UP", "防御力UP", "回復", "速度UP", "クリティカル", "連続攻撃", "能力向上", "HP回復", "SP回復", "攻撃強化", "防御強化"],
-    "equipment_options": ["武器", "防具", "アクセ", "アイテム", "装備", "刻印", "スキル"],
-    "stage_options": ["1区", "2区", "3区", "4区", "5区", "エリア", "ステージ", "フロア", "階"],
-    "character_options": ["Tank", "Healer", "DPS", "Support", "前衛", "後衛", "攻撃", "防御", "回復", "補助"],
-    "battle_options": ["出撃", "戦闘開始", "スタート", "開始", "挑戦", "次へ", "GO", "進む", "探索"]
+    "character_priority": 1
   }
 }
