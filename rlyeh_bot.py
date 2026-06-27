@@ -4,7 +4,6 @@ import json
 import os
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
@@ -80,10 +79,8 @@ class RlyehShoujotaiBot:
         try:
             print("正在启动Chrome浏览器...")
             if chrome_path and os.path.exists(chrome_path):
-                service = Service(executable_path=chrome_path)
-                self.driver = webdriver.Chrome(service=service, options=chrome_options)
-            else:
-                self.driver = webdriver.Chrome(options=chrome_options)
+                chrome_options.binary_location = chrome_path
+            self.driver = webdriver.Chrome(options=chrome_options)
             self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
             self.wait = WebDriverWait(self.driver, 10)
             self.driver.set_page_load_timeout(30)
