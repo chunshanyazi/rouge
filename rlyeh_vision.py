@@ -726,8 +726,11 @@ class RlyehBotGUI:
         ttk.Label(cap_tool_frame, text="使用方法: 点击按钮后3秒内切换到游戏，用鼠标拖拽框选按钮区域", 
                   foreground="gray").grid(row=1, column=0, columnspan=4, sticky=tk.W, padx=5, pady=5)
         
-        list_frame = ttk.LabelFrame(cap_frame, text=" 模板列表 ", padding="5")
-        list_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+        content_frame = ttk.Frame(cap_frame)
+        content_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+        
+        list_frame = ttk.LabelFrame(content_frame, text=" 模板列表 ", padding="5")
+        list_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
         
         list_toolbar = ttk.Frame(list_frame)
         list_toolbar.pack(fill=tk.X, pady=3)
@@ -762,7 +765,22 @@ class RlyehBotGUI:
         self.template_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
+        self.template_tree.bind('<<TreeviewSelect>>', self.on_template_select)
         self.template_tree.bind('<Double-1>', self.on_template_double_click)
+        
+        preview_frame = ttk.LabelFrame(content_frame, text=" 图片预览 ", padding="5")
+        preview_frame.pack(side=tk.RIGHT, fill=tk.BOTH, padx=(5, 0))
+        preview_frame.config(width=280)
+        
+        self.preview_label = ttk.Label(preview_frame, text="选择模板查看预览", anchor=tk.CENTER,
+                                       background="#f0f0f0", foreground="gray")
+        self.preview_label.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        self.preview_label.config(width=35, height=15)
+        
+        self.preview_info = ttk.Label(preview_frame, text="", anchor=tk.CENTER, foreground="gray")
+        self.preview_info.pack(fill=tk.X, padx=5, pady=(0, 5))
+        
+        self._preview_image = None
         
         self.refresh_template_list()
     
@@ -1003,6 +1021,35 @@ class RlyehBotGUI:
             self.log(f"已重命名: {filename} -> {new_filename}")
         except Exception as e:
             messagebox.showerror("错误", f"重命名失败: {str(e)}")
+    
+    def on_template_select(self, event=None):
+        cat, filename = self.get_selected_template()
+        if not filename:
+            self.preview_label.config(image='', text="选择模板查看预览", foreground="gray")
+            self.preview_info.config(text="")
+            self._preview_image = None
+            return
+        
+        filepath = os.path.join(TEMPLATE_DIR, cat, filename)
+        try:
+            from PIL import Image, ImageTk
+            img = Image.open(filepath)
+            orig_w, orig_h = img.size
+            
+            max_w, max_h = 250, 250
+            ratio = min(max_w / orig_w, max_h / orig_h, 1.0)
+            new_w = int(orig_w * ratio)
+            new_h = int(orig_h * ratio)
+            
+            img = img.resize((new_w, new_h), Image.LANCZOS)
+            self._preview_image = ImageTk.PhotoImage(img)
+            
+            self.preview_label.config(image=self._preview_image, text="")
+            self.preview_info.config(text=f"原始尺寸: {orig_w} x {orig_h}")
+        except Exception as e:
+            self.preview_label.config(image='', text=f"预览失败\n{str(e)}", foreground="red")
+            self.preview_info.config(text="")
+            self._preview_image = None
     
     def on_template_double_click(self, event):
         cat, filename = self.get_selected_template()
