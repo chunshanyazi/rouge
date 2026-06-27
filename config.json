@@ -12,5 +12,8 @@
   "max_battles": 100,
   "battle_delay": 2,
   "click_delay": 0.5,
-  "debug_mode": false
+  "debug_mode": false,
+  "headless": false,
+  "remote_debug_port": 9222,
+  "chrome_path": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
 }
