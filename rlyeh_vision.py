@@ -430,6 +430,13 @@ class ImageBot:
         self.missing_counter += 1
         return False
     
+    def _sleep_check(self, seconds):
+        import time
+        end_time = time.time() + seconds
+        while self.running and time.time() < end_time:
+            time.sleep(min(0.2, end_time - time.time()))
+        return self.running
+    
     def roguelike_loop(self):
         self.log("=== 肉鸽模式自动脚本启动 ===")
         self.battle_count = 0
@@ -467,18 +474,23 @@ class ImageBot:
                         self.log(f"连续{self.max_missing}次未找到目标，尝试返回上一阶段...")
                         self.missing_counter = 0
                         self.find_and_click('close')
-                        time.sleep(1)
+                        if not self._sleep_check(1):
+                            break
                         self.find_and_click('cancel')
-                        time.sleep(1)
+                        if not self._sleep_check(1):
+                            break
                         if self.phase_history:
                             prev_phase, _ = self.phase_history[-1]
                             self.log(f"尝试返回阶段: {prev_phase}")
                     else:
-                        time.sleep(2)
+                        if not self._sleep_check(2):
+                            break
                 else:
-                    time.sleep(1.5)
+                    if not self._sleep_check(1.5):
+                        break
                 
-                time.sleep(0.5)
+                if not self._sleep_check(0.5):
+                    break
         
         except Exception as e:
             self.log(f"错误: {str(e)}")
@@ -487,6 +499,7 @@ class ImageBot:
         
         self.log("=== 肉鸽模式脚本结束 ===")
         self.set_phase('idle')
+        self.running = False
 
 class RlyehBotGUI:
     def __init__(self, root):
@@ -533,7 +546,17 @@ class RlyehBotGUI:
         title = ttk.Label(main_frame, text="RlyehBot - 肉鸽模式自动脚本", font=("Microsoft YaHei", 16, "bold"))
         title.pack(pady=(0, 10))
         
-        info_frame = ttk.LabelFrame(main_frame, text=" 运行状态 ", padding="10")
+        content_frame = ttk.Frame(main_frame)
+        content_frame.pack(fill=tk.BOTH, expand=True)
+        
+        left_frame = ttk.Frame(content_frame)
+        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
+        
+        right_frame = ttk.LabelFrame(content_frame, text=" 运行日志 ", padding="5")
+        right_frame.pack(side=tk.RIGHT, fill=tk.BOTH)
+        right_frame.config(width=360)
+        
+        info_frame = ttk.LabelFrame(left_frame, text=" 运行状态 ", padding="10")
         info_frame.pack(fill=tk.X, pady=5)
         
         self.status_label = ttk.Label(info_frame, text="状态: 就绪", foreground="blue", font=("Microsoft YaHei", 11))
@@ -545,7 +568,7 @@ class RlyehBotGUI:
         self.battles_label = ttk.Label(info_frame, text="战斗数: 0")
         self.battles_label.pack(side=tk.RIGHT, padx=5)
         
-        func_frame = ttk.LabelFrame(main_frame, text=" 功能开关 ", padding="10")
+        func_frame = ttk.LabelFrame(left_frame, text=" 功能开关 ", padding="10")
         func_frame.pack(fill=tk.X, pady=5)
         
         self.auto_battle_var = tk.BooleanVar(value=self.config['auto_battle'])
@@ -563,7 +586,7 @@ class RlyehBotGUI:
         self.auto_restart_var = tk.BooleanVar(value=self.config.get('roguelike_settings', {}).get('auto_restart', True))
         ttk.Checkbutton(func_frame, text="自动重开", variable=self.auto_restart_var).grid(row=1, column=1, sticky=tk.W, padx=5, pady=3)
         
-        ctrl_frame = ttk.Frame(main_frame)
+        ctrl_frame = ttk.Frame(left_frame)
         ctrl_frame.pack(fill=tk.X, pady=10)
         
         self.start_btn = ttk.Button(ctrl_frame, text="启动肉鸽脚本", command=self.start_roguelike)
@@ -577,8 +600,8 @@ class RlyehBotGUI:
         
         ttk.Button(ctrl_frame, text="打开模板文件夹", command=self.open_template_dir).pack(side=tk.LEFT, padx=5)
         
-        guide_frame = ttk.LabelFrame(main_frame, text=" 使用说明 ", padding="10")
-        guide_frame.pack(fill=tk.X, pady=5)
+        guide_frame = ttk.LabelFrame(left_frame, text=" 使用说明 ", padding="10")
+        guide_frame.pack(fill=tk.BOTH, expand=True, pady=5)
         
         guide_text = (
             "使用步骤：\n"
@@ -597,12 +620,9 @@ class RlyehBotGUI:
             "  - confirm/close/cancel: 通用确认/关闭/取消按钮\n"
             "  - victory/defeat/restart: 胜利/失败/重开按钮\n"
         )
-        ttk.Label(guide_frame, text=guide_text, justify=tk.LEFT, font=("Microsoft YaHei", 9)).pack(anchor=tk.W)
+        ttk.Label(guide_frame, text=guide_text, justify=tk.LEFT, font=("Microsoft YaHei", 9)).pack(anchor=tk.NW, fill=tk.BOTH, expand=True)
         
-        log_frame = ttk.LabelFrame(main_frame, text=" 运行日志 ", padding="5")
-        log_frame.pack(fill=tk.BOTH, expand=True, pady=5)
-        
-        self.log_text = scrolledtext.ScrolledText(log_frame, height=12, state=tk.DISABLED, font=("Consolas", 9))
+        self.log_text = scrolledtext.ScrolledText(right_frame, state=tk.DISABLED, font=("Consolas", 9))
         self.log_text.pack(fill=tk.BOTH, expand=True)
     
     def create_roguelike_tab(self):
@@ -1132,6 +1152,14 @@ class RlyehBotGUI:
         self.bot.running = False
         self.log("正在停止脚本...")
         self.status_label.config(text="状态: 停止中", foreground="orange")
+        self.stop_btn.config(state=tk.DISABLED)
+        self._check_stop_complete()
+    
+    def _check_stop_complete(self):
+        if hasattr(self, 'thread') and self.thread and self.thread.is_alive():
+            self.root.after(200, self._check_stop_complete)
+        else:
+            self.on_bot_stopped()
     
     def on_bot_stopped(self):
         self.start_btn.config(state=tk.NORMAL)
