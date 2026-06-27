@@ -140,11 +140,11 @@ class RlyehShoujotaiBot:
     
     def login_dmm(self):
         if not self.config['auto_login'] or not self.config['dmm_id'] or not self.config['dmm_password']:
-            print("登录信息未配置，跳过自动登录")
-            return False
+            print("自动登录未配置，进入手动登录模式")
+            return self.manual_login()
         
         try:
-            print("开始DMM登录...")
+            print("开始DMM自动登录...")
             self.driver.get('https://www.dmm.com/my/-/login/')
             time.sleep(3)
             
@@ -157,22 +157,42 @@ class RlyehShoujotaiBot:
             time.sleep(5)
             
             if "ログイン" in self.driver.title:
-                print("登录失败，请检查账号密码")
-                return False
+                print("自动登录失败，切换到手动登录")
+                return self.manual_login()
             
             print("DMM登录成功")
             return True
         except Exception as e:
             if self.config['debug_mode']:
                 print(f"Login error: {e}")
-            print("登录失败，可能需要手动登录")
-            return False
+            print("自动登录失败，切换到手动登录")
+            return self.manual_login()
+    
+    def manual_login(self):
+        print("\n" + "="*50)
+        print("请在打开的浏览器中手动完成以下操作：")
+        print("1. 登录你的 DMM 账号")
+        print("2. 确保已经进入游戏页面")
+        print("3. 完成后回到这里按 Enter 键继续")
+        print("="*50 + "\n")
+        
+        try:
+            self.driver.get('https://www.dmm.com/my/-/login/')
+        except:
+            pass
+        
+        input("按 Enter 继续...")
+        print("登录确认完成，继续执行...")
+        return True
     
     def enter_game(self):
         try:
-            print("进入游戏...")
-            self.driver.get(self.config['game_url'])
-            time.sleep(10)
+            if self.config['game_url'] not in self.driver.current_url:
+                print("进入游戏...")
+                self.driver.get(self.config['game_url'])
+                time.sleep(10)
+            else:
+                print("已在游戏页面，跳过导航")
             
             self.handle_popup()
             
@@ -394,10 +414,9 @@ class RlyehShoujotaiBot:
 if __name__ == "__main__":
     bot = RlyehShoujotaiBot()
     
-    if not bot.config['dmm_id'] or not bot.config['dmm_password']:
-        print("请先配置DMM账号信息")
-        bot.config['dmm_id'] = input("DMM ID: ")
-        bot.config['dmm_password'] = input("DMM Password: ")
-        bot.save_config()
+    mode = "手动登录" if (not bot.config['auto_login'] or not bot.config['dmm_id'] or not bot.config['dmm_password']) else "自动登录"
+    print(f"启动模式: {mode}")
+    print(f"游戏地址: {bot.config['game_url']}")
+    print()
     
     bot.run()
