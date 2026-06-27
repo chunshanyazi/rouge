@@ -772,10 +772,10 @@ class RlyehBotGUI:
         preview_frame.pack(side=tk.RIGHT, fill=tk.BOTH, padx=(5, 0))
         preview_frame.config(width=280)
         
-        self.preview_label = ttk.Label(preview_frame, text="选择模板查看预览", anchor=tk.CENTER,
-                                       background="#f0f0f0", foreground="gray")
+        self.preview_label = tk.Label(preview_frame, text="选择模板查看预览", anchor=tk.CENTER,
+                                      bg="#f0f0f0", fg="gray", width=35, height=15,
+                                      relief=tk.SUNKEN)
         self.preview_label.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-        self.preview_label.config(width=35, height=15)
         
         self.preview_info = ttk.Label(preview_frame, text="", anchor=tk.CENTER, foreground="gray")
         self.preview_info.pack(fill=tk.X, padx=5, pady=(0, 5))
@@ -1025,7 +1025,7 @@ class RlyehBotGUI:
     def on_template_select(self, event=None):
         cat, filename = self.get_selected_template()
         if not filename:
-            self.preview_label.config(image='', text="选择模板查看预览", foreground="gray")
+            self.preview_label.config(image='', text="选择模板查看预览", fg="gray")
             self.preview_info.config(text="")
             self._preview_image = None
             return
@@ -1047,7 +1047,7 @@ class RlyehBotGUI:
             self.preview_label.config(image=self._preview_image, text="")
             self.preview_info.config(text=f"原始尺寸: {orig_w} x {orig_h}")
         except Exception as e:
-            self.preview_label.config(image='', text=f"预览失败\n{str(e)}", foreground="red")
+            self.preview_label.config(image='', text=f"预览失败\n{str(e)}", fg="red")
             self.preview_info.config(text="")
             self._preview_image = None
     
