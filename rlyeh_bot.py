@@ -19,10 +19,7 @@ class RlyehShoujotaiBot:
         self.running = False
         
     def load_config(self, path):
-        if os.path.exists(path):
-            with open(path, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        return {
+        default_config = {
             'game_url': 'https://play.games.dmm.co.jp/game/rlyehshoujotai_x_783592',
             'dmm_id': '',
             'dmm_password': '',
@@ -39,8 +36,17 @@ class RlyehShoujotaiBot:
             'debug_mode': False,
             'headless': False,
             'remote_debug_port': 9222,
-            'chrome_path': 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+            'chrome_path': ''
         }
+        
+        if os.path.exists(path):
+            with open(path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+                for key in default_config:
+                    if key not in config:
+                        config[key] = default_config[key]
+                return config
+        return default_config
     
     def save_config(self, path='config.json'):
         with open(path, 'w', encoding='utf-8') as f:
