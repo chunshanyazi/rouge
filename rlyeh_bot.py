@@ -4,6 +4,7 @@ import json
 import os
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
@@ -37,7 +38,8 @@ class RlyehShoujotaiBot:
             'click_delay': 0.5,
             'debug_mode': False,
             'headless': False,
-            'remote_debug_port': 9222
+            'remote_debug_port': 9222,
+            'chrome_path': 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
         }
     
     def save_config(self, path='config.json'):
@@ -67,9 +69,15 @@ class RlyehShoujotaiBot:
         if self.config.get('headless'):
             chrome_options.add_argument('--headless=new')
         
+        chrome_path = self.config.get('chrome_path')
+        
         try:
             print("正在启动Chrome浏览器...")
-            self.driver = webdriver.Chrome(options=chrome_options)
+            if chrome_path and os.path.exists(chrome_path):
+                service = Service(executable_path=chrome_path)
+                self.driver = webdriver.Chrome(service=service, options=chrome_options)
+            else:
+                self.driver = webdriver.Chrome(options=chrome_options)
             self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
             self.wait = WebDriverWait(self.driver, 10)
             self.driver.set_page_load_timeout(30)
@@ -77,13 +85,13 @@ class RlyehShoujotaiBot:
         except Exception as e:
             print(f"\n浏览器启动失败: {e}")
             print("\n可能的原因：")
-            print("1. 服务器环境没有图形界面（DISPLAY未设置）")
-            print("2. Chrome浏览器未安装或版本不兼容")
-            print("3. 需要使用headless模式")
-            print("\n建议方案：")
-            print("1. 在本地电脑上运行脚本（推荐）")
-            print("2. 设置DISPLAY环境变量并配置X11转发")
-            print("3. 在config.json中设置headless: true")
+            print("1. Chrome路径不正确")
+            print("2. Chrome版本与Selenium不兼容")
+            print("3. 需要更新Chrome或Selenium")
+            print("\n建议：")
+            print("1. 确认Chrome路径是否正确")
+            print("2. 在config.json中修改chrome_path")
+            print("3. 运行: pip install --upgrade selenium")
             raise
         
         print(f"\n远程调试地址: http://localhost:{debug_port}")
