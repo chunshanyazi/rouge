@@ -31,11 +31,11 @@ def load_config():
             'equipment_priority': 4,
             'stage_priority': 1,
             'character_priority': 1,
-            'debuff_options': ['毒', '麻痺', '沉默', '混乱', '衰弱', '呪い', '暗闇'],
-            'buff_options': ['攻撃力UP', '防御力UP', '回復', '速度UP', 'クリティカル', '連続攻撃', '能力向上'],
-            'equipment_options': ['武器', '防具', 'アクセ', 'アイテム', '装備'],
-            'stage_options': ['1区', '2区', '3区', '4区', '5区', 'エリア', 'ステージ'],
-            'character_options': ['Tank', 'Healer', 'DPS', 'Support', '前衛', '後衛']
+            'debuff_options': ['毒', '麻痺', '沉默', '混乱', '衰弱', '呪い', '暗闇', '拘束', '恐怖', 'スタン'],
+            'buff_options': ['攻撃力UP', '防御力UP', '回復', '速度UP', 'クリティカル', '連続攻撃', '能力向上', 'HP回復', 'SP回復', '攻撃強化', '防御強化'],
+            'equipment_options': ['武器', '防具', 'アクセ', 'アイテム', '装備', '刻印', 'スキル'],
+            'stage_options': ['1区', '2区', '3区', '4区', '5区', 'エリア', 'ステージ', 'フロア', '階'],
+            'character_options': ['Tank', 'Healer', 'DPS', 'Support', '前衛', '後衛', '攻撃', '防御', '回復', '補助']
         }
     }
     if os.path.exists(CONFIG_FILE):
@@ -244,17 +244,17 @@ class RlyehBotGUI:
         self.debuff_priority_var.set(3)
         self.equip_priority_var.set(4)
         self.debuff_entry.delete(0, tk.END)
-        self.debuff_entry.insert(0, "毒,麻痺,沉默,混乱,衰弱,呪い,暗闇")
+        self.debuff_entry.insert(0, "毒,麻痺,沉默,混乱,衰弱,呪い,暗闇,拘束,恐怖,スタン")
         self.buff_entry.delete(0, tk.END)
-        self.buff_entry.insert(0, "攻撃力UP,防御力UP,回復,速度UP,クリティカル,連続攻撃,能力向上")
+        self.buff_entry.insert(0, "攻撃力UP,防御力UP,回復,速度UP,クリティカル,連続攻撃,能力向上,HP回復,SP回復,攻撃強化,防御強化")
         self.equip_entry.delete(0, tk.END)
-        self.equip_entry.insert(0, "武器,防具,アクセ,アイテム,装備")
+        self.equip_entry.insert(0, "武器,防具,アクセ,アイテム,装備,刻印,スキル")
         self.stage_entry.delete(0, tk.END)
-        self.stage_entry.insert(0, "1区,2区,3区,4区,5区,エリア,ステージ")
+        self.stage_entry.insert(0, "1区,2区,3区,4区,5区,エリア,ステージ,フロア,階")
         self.char_entry.delete(0, tk.END)
-        self.char_entry.insert(0, "Tank,Healer,DPS,Support,前衛,後衛")
+        self.char_entry.insert(0, "Tank,Healer,DPS,Support,前衛,後衛,攻撃,防御,回復,補助")
         self.battle_entry.delete(0, tk.END)
-        self.battle_entry.insert(0, "戦闘,战斗,進む,次へ")
+        self.battle_entry.insert(0, "出撃,戦闘開始,スタート,開始,挑戦,次へ,GO,進む,探索")
         messagebox.showinfo("提示", "已重置为默认设置")
     
     def log(self, message):
@@ -450,7 +450,7 @@ class RlyehBotGUI:
             return False
         
         rog = self.config.get('roguelike_settings', {})
-        battle_buttons = rog.get('battle_options', ["戦闘開始", "スタート", "開始", "挑戦", "次へ"])
+        battle_buttons = rog.get('battle_options', ["出撃", "戦闘開始", "スタート", "開始", "挑戦", "次へ", "GO"])
         
         for btn in battle_buttons:
             if self.click_by_text(btn, timeout=1):
