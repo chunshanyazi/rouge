@@ -269,8 +269,22 @@ class RlyehBotGUI:
             self.config['chrome_debug_port'] = port
             save_config(self.config)
             
+            self.status_label.config(text="状态: 正在连接...", foreground="orange")
+            self.root.update()
+            
             chrome_options = Options()
             chrome_options.add_experimental_option("debuggerAddress", f"127.0.0.1:{port}")
+            
+            import socket
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(3)
+            result = sock.connect_ex(('127.0.0.1', port))
+            sock.close()
+            
+            if result != 0:
+                messagebox.showerror("连接失败", f"无法连接到端口 {port}\n\n请先运行 start_chrome_debug.bat\n\n或者手动启动Chrome：\n1. 关闭所有Chrome窗口\n2. 按Win+R\n3. 输入: chrome.exe --remote-debugging-port={port}")
+                self.status_label.config(text="状态: 未连接", foreground="red")
+                return
             
             self.driver = webdriver.Chrome(options=chrome_options)
             self.status_label.config(text="状态: 已连接", foreground="green")
@@ -284,8 +298,9 @@ class RlyehBotGUI:
                 pass
                 
         except InvalidArgumentException:
-            messagebox.showerror("错误", "无法连接到Chrome！\n\n请用调试模式启动Chrome：\n1. 关闭所有Chrome窗口\n2. 按Win+R\n3. 输入: chrome.exe --remote-debugging-port=9222")
+            messagebox.showerror("错误", f"无法连接到Chrome！\n\n请先运行 start_chrome_debug.bat\n\n或者手动启动Chrome：\n1. 关闭所有Chrome窗口\n2. 按Win+R\n3. 输入: chrome.exe --remote-debugging-port={self.port_var.get()}")
         except Exception as e:
+            self.status_label.config(text="状态: 未连接", foreground="red")
             messagebox.showerror("错误", f"连接失败: {str(e)}")
     
     def safe_click(self, element, delay=None):
